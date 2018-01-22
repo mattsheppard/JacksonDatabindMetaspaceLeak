@@ -9,6 +9,29 @@ Try running it with...
 > java -XX:MaxMetaspaceSize=100m -cp "target/dependency/*:target/jackson-classolader-leaker-0.0.1-SNAPSHOT.jar" com.kstruct.LeakMetaspaceViaJackson
 ```
 
-On my machine it runs happily for about a minute, then GC goes a bit crazy, loads of heap is allocated (but not used) and eventually we start getting bunches of out of memory errors.
+On my machine it runs happily for a few minutes, then fails.
 
-I'll update this with a link to the Jackson issue once I've raised it.
+The are a couple of things which improve the situation...
+
+```
+if (Boolean.getBoolean("clearTypeFactoryCache")) {
+    // Note that we haven't kept any reference to any groovyClasses or
+    // groovyObjects, so they should be collectable in both the heap
+    // and meta-space.
+    
+    // https://github.com/FasterXML/jackson-databind/issues/489
+    // suggests we may be expected to call this if we're dynamically
+    // creating types
+    mapper.getTypeFactory().clearCache();
+}
+
+if (Boolean.getBoolean("flushCachedSerializers")) {
+    // I've found that clearing this helps a bit (but doesn't totally fix the problem)
+    // System.out.println(((DefaultSerializerProvider) mapper.getSerializerProvider()).cachedSerializersCount());
+    ((DefaultSerializerProvider) mapper.getSerializerProvider()).flushCachedSerializers();
+}
+```
+
+You can turn them on on the command line with `-DclearTypeFactoryCache=true -DflushCachedSerializers=true`
+
+Raised with jackson-databind as https://github.com/FasterXML/jackson-databind/issues/1905
