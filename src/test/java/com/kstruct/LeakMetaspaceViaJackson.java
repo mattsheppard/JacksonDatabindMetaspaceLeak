@@ -6,6 +6,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.DefaultSerializerProvider;
 
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
@@ -25,15 +26,25 @@ public class LeakMetaspaceViaJackson {
             // create a new class loader and load it as a new class.
             groovyScriptFile.setLastModified(System.currentTimeMillis());
 
+            mapper.getTypeFactory().clearCache();
+            
             Class groovyClass = engine.loadScriptByName(groovyScriptFile.getName());
 
             Object groovyObject = groovyClass.newInstance();
-            System.out.println(mapper.writeValueAsString(groovyObject));
             
+            System.out.println(mapper.writeValueAsString(groovyObject));
+
             // Note that we haven't kept any reference to the groovyClass or
             // groovyObject, so they should be collectable in both the heap
             // and meta-space.
+
+            // https://github.com/FasterXML/jackson-databind/issues/489
+            // suggests we may be expected to call this if we're dynamically
+            // creating types
+            mapper.getTypeFactory().clearCache();
+            
+            System.out.println(((DefaultSerializerProvider) mapper.getSerializerProvider()).cachedSerializersCount());
+            ((DefaultSerializerProvider) mapper.getSerializerProvider()).flushCachedSerializers();
         }
     }
-    
 }
