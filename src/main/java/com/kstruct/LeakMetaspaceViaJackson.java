@@ -37,9 +37,8 @@ public class LeakMetaspaceViaJackson {
 
                 Object groovyObject = groovyClass.newInstance();
                 
-                String json = mapper.writeValueAsString(groovyObject);
-                
-                System.out.println(json);
+//                String json = mapper.writeValueAsString(groovyObject);
+//                System.out.println(json);
             }
 
             // Note that we haven't kept any reference to any groovyClasses or
@@ -52,7 +51,7 @@ public class LeakMetaspaceViaJackson {
             mapper.getTypeFactory().clearCache();
             
             // If found that clearing this helps a bit (but doesn't totally fix the problem)
-            System.out.println(((DefaultSerializerProvider) mapper.getSerializerProvider()).cachedSerializersCount());
+//            System.out.println(((DefaultSerializerProvider) mapper.getSerializerProvider()).cachedSerializersCount());
             ((DefaultSerializerProvider) mapper.getSerializerProvider()).flushCachedSerializers();
         }
     }

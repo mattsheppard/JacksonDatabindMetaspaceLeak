@@ -9,6 +9,6 @@ Try running it with...
 > java -XX:MaxMetaspaceSize=20m -cp "target/dependency/*:target/jackson-classolader-leaker-0.0.1-SNAPSHOT.jar" com.kstruct.LeakMetaspaceViaJackson
 ```
 
- -XX:MaxMetaspaceSize=20m - On my machine it runs happily for about a minute, then GC goes a bit crazy, loads of heap is allocated (but not used) and eventually we start getting bunches of out of memory errors.
+On my machine it runs happily for about a minute, then GC goes a bit crazy, loads of heap is allocated (but not used) and eventually we start getting bunches of out of memory errors.
 
 I'll update this with a link to the Jackson issue once I've raised it.
