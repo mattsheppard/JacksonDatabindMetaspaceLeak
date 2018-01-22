@@ -14,6 +14,8 @@ public class LeakMetaspaceViaJackson {
     private static final String GROOVY_SCRIPT_NAME_PREFIX = "Script";
     private static final int NUM_GROOVY_SCRIPTS = 1000;
 
+    public static ObjectMapper mapper = new ObjectMapper();
+    
     public static void main(String[] args) throws Exception {
         leak();
     }
@@ -25,7 +27,6 @@ public class LeakMetaspaceViaJackson {
         regenerateGroovyScripts(groovyClassDir);
         
         GroovyScriptEngine engine = new GroovyScriptEngine(groovyClassDir.getAbsolutePath());
-        ObjectMapper mapper = new ObjectMapper();
         
         while(true) {
             regenerateGroovyScripts(groovyClassDir);
@@ -37,22 +38,26 @@ public class LeakMetaspaceViaJackson {
 
                 Object groovyObject = groovyClass.newInstance();
                 
-//                String json = mapper.writeValueAsString(groovyObject);
-//                System.out.println(json);
+                String json = mapper.writeValueAsString(groovyObject);
+                System.out.println(json);
             }
 
-            // Note that we haven't kept any reference to any groovyClasses or
-            // groovyObjects, so they should be collectable in both the heap
-            // and meta-space.
-
-            // https://github.com/FasterXML/jackson-databind/issues/489
-            // suggests we may be expected to call this if we're dynamically
-            // creating types
-            mapper.getTypeFactory().clearCache();
+            if (Boolean.getBoolean("clearTypeFactoryCache")) {
+                // Note that we haven't kept any reference to any groovyClasses or
+                // groovyObjects, so they should be collectable in both the heap
+                // and meta-space.
+                
+                // https://github.com/FasterXML/jackson-databind/issues/489
+                // suggests we may be expected to call this if we're dynamically
+                // creating types
+                mapper.getTypeFactory().clearCache();
+            }
             
-            // If found that clearing this helps a bit (but doesn't totally fix the problem)
-//            System.out.println(((DefaultSerializerProvider) mapper.getSerializerProvider()).cachedSerializersCount());
-            ((DefaultSerializerProvider) mapper.getSerializerProvider()).flushCachedSerializers();
+            if (Boolean.getBoolean("flushCachedSerializers")) {
+                // This appears to also be necessary (maybe it could be added to the interface
+                // to avoid the cast here?)
+                ((DefaultSerializerProvider) mapper.getSerializerProvider()).flushCachedSerializers();
+            }
         }
     }
 
